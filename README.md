@@ -1,11 +1,16 @@
 gostatsd
 ========
 
-An implementation of [Etsy's][etsy] [statsd][statsd] in Go.
+An implementation of [Etsy's][etsy] [statsd][statsd] in Go. This project was
+forked from the original, github.com/kisielk/gostatsd, as we found that the
+implementation choices and rapid release cycle of Atlassian's fork were not
+a good fit for us.
+
+Going forward, we will provide this project as a module, and attempt to make
+minimal changes from the original implementation.
 
 The project provides both a server called "gostatsd" which works much like
 Etsy's version, but also provides a library for developing customized servers.
-
 
 Building the server
 -------------------
