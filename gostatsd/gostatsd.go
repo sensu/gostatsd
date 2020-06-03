@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/kisielk/gostatsd/statsd"
 	"log"
 	"time"
+
+	"github.com/sensu/gostatsd/statsd"
 )
 
 const (

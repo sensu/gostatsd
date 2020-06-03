@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/kisielk/gostatsd/statsd"
 	"log"
+
+	"github.com/sensu/gostatsd/statsd"
 )
 
 func main() {

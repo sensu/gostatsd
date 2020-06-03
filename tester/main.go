@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/kisielk/gostatsd/statsd"
 	"io"
 	"math/rand"
 	"net"
 	"os"
 	"time"
+
+	"github.com/sensu/gostatsd/statsd"
 )
 
 var (

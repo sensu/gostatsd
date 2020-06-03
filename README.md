@@ -48,10 +48,10 @@ Using the library
 -----------------
 In your source code:
 
-    import "github.com/kisielk/gostatsd/statsd"
+    import "github.com/sensu/gostatsd/statsd"
 
-Documentation can be found via `go doc github.com/kisielk/gostatsd/statsd` or at
-http://godoc.org/github.com/kisielk/gostatsd/statsd
+Documentation can be found via `go doc github.com/sensu/gostatsd/statsd` or at
+http://godoc.org/github.com/sensu/gostatsd/statsd
 
 [etsy]: http://www.etsy.com
 [statsd]: http://www.github.com/etsy/statsd
