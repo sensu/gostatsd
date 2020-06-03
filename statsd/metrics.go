@@ -51,7 +51,7 @@ func (m MetricMap) String() string {
 	return buf.String()
 }
 
-// MetricListMap is simlar to MetricMap but instead of storing a single aggregated 
+// MetricListMap is simlar to MetricMap but instead of storing a single aggregated
 // Metric value it stores a list of all collected values.
 type MetricListMap map[string][]float64
 
@@ -60,7 +60,7 @@ func (m MetricListMap) String() string {
 	for k, v := range m {
 		buf.Write([]byte(fmt.Sprint(k)))
 		for _, v2 := range v {
-			fmt.Fprintf(buf, "\t%f\n", k, v2)
+			fmt.Fprintf(buf, "\t%f\n", v2)
 		}
 	}
 	return buf.String()

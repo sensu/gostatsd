@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/sensu/cmd"
+	"github.com/kisielk/cmd"
 )
 
 // DefaultConsoleAddr is the default address on which a ConsoleServer will listen
