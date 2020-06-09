@@ -30,9 +30,10 @@ func (m MetricType) String() string {
 
 // Metric represents a single data collected datapoint
 type Metric struct {
-	Type   MetricType // The type of metric
-	Bucket string     // The name of the bucket where the metric belongs
-	Value  float64    // The numeric value of the metric
+	Type   MetricType        // The type of metric
+	Bucket string            // The name of the bucket where the metric belongs
+	Value  float64           // The numeric value of the metric
+	Tags   map[string]string // Influxdata tags extension
 }
 
 func (m Metric) String() string {
