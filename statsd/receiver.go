@@ -103,11 +103,30 @@ func parseLine(line []byte) (Metric, error) {
 	var metric Metric
 
 	buf := bytes.NewBuffer(line)
-	bucket, err := buf.ReadBytes(':')
+	bucketAndTags, err := buf.ReadBytes(':')
 	if err != nil {
 		return metric, fmt.Errorf("error parsing metric name: %s", err)
 	}
-	metric.Bucket = string(bucket[:len(bucket)-1])
+	// discard trailing ':'
+	bucketAndTags = bucketAndTags[:len(bucketAndTags)-1]
+
+	// Parse any 'tags' found in the bucket name. This is a concept created by
+	// influxdata and is not present in the statsd spec. Nevertheless, it is
+	// widely used.
+	tags := bytes.Split(bucketAndTags, []byte{','})
+	bucket := tags[0]
+	if len(tags) > 1 {
+		metric.Tags = make(map[string]string, len(tags)-1)
+		for _, tag := range tags {
+			tag = bytes.TrimSpace(tag)
+			kv := bytes.Split(tag, []byte{'='})
+			if len(kv) != 2 {
+				continue
+			}
+			metric.Tags[string(kv[0])] = string(kv[1])
+		}
+	}
+	metric.Bucket = string(bucket)
 
 	value, err := buf.ReadBytes('|')
 	if err != nil {
