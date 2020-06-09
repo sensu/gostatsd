@@ -2,9 +2,9 @@ package statsd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"strconv"
 )
@@ -32,22 +32,61 @@ type MetricReceiver struct {
 	Handler Handler // handler to invoke
 }
 
-// ListenAndReceive listens on the UDP network address of srv.Addr and then calls
-// Receive to handle the incoming datagrams. If Addr is blank then DefaultMetricsAddr is used.
+// ListenAndReceive is like ListenAndReceiveContext, but context.Background()
+// is used. Use ListenAndReceive if you don't need to control cancellation.
 func (r *MetricReceiver) ListenAndReceive() error {
+	return r.ListenAndReceiveContext(context.Background())
+}
+
+// ListenAndReceiveContext listens on the UDP network address of r.Addr and then calls
+// Receive to handle the incoming datagrams. If Addr is blank then DefaultMetricsAddr is used.
+func (r *MetricReceiver) ListenAndReceiveContext(ctx context.Context) error {
 	addr := r.Addr
 	if addr == "" {
 		addr = DefaultMetricsAddr
 	}
-	c, err := net.ListenPacket("udp", addr)
+	var listener net.ListenConfig
+	c, err := listener.ListenPacket(ctx, "udp", addr)
 	if err != nil {
 		return err
 	}
-	return r.Receive(c)
+	r.ReceiveContext(ctx, c)
+	return c.Close()
 }
 
-// Receive accepts incoming datagrams on c and calls r.Handler.HandleMetric() for each line in the
-// datagram that successfully parses in to a Metric
+// ReceiveContext accepts incoming datagrams on c and calls
+// r.Handler.HandleMetric() for each line in the datagram that successfully
+// parses in to a Metric.
+//
+// If any errors occur reading the UDP stream, they will be emitted as metrics
+// that have a bucket name of "error", and a tag that contains the error text.
+func (r *MetricReceiver) ReceiveContext(ctx context.Context, c net.PacketConn) {
+	msg := make([]byte, 1024)
+	for ctx.Err() == nil {
+		nbytes, addr, err := c.ReadFrom(msg)
+		if err != nil {
+			r.handleError(err)
+			continue
+		}
+		buf := make([]byte, nbytes)
+		copy(buf, msg[:nbytes])
+		go r.handleMessage(addr, buf)
+	}
+}
+
+func (r *MetricReceiver) handleError(err error) {
+	metric := Metric{
+		Type:   COUNTER,
+		Bucket: fmt.Sprintf("error"),
+		Value:  1,
+		Tags: map[string]string{
+			"error": err.Error(),
+		},
+	}
+	r.Handler.HandleMetric(metric)
+}
+
+// Receive is deprecated; use ReceiveContext.
 func (r *MetricReceiver) Receive(c net.PacketConn) error {
 	defer c.Close()
 
@@ -55,7 +94,6 @@ func (r *MetricReceiver) Receive(c net.PacketConn) error {
 	for {
 		nbytes, addr, err := c.ReadFrom(msg)
 		if err != nil {
-			log.Printf("%s", err)
 			continue
 		}
 		buf := make([]byte, nbytes)
@@ -66,14 +104,14 @@ func (r *MetricReceiver) Receive(c net.PacketConn) error {
 }
 
 // handleMessage handles the contents of a datagram and attempts to parse a Metric from each line
-func (srv *MetricReceiver) handleMessage(addr net.Addr, msg []byte) {
+func (r *MetricReceiver) handleMessage(addr net.Addr, msg []byte) {
 	buf := bytes.NewBuffer(msg)
 	for {
 		line, readerr := buf.ReadBytes('\n')
 
 		// protocol does not require line to end in \n, if EOF use received line if valid
 		if readerr != nil && readerr != io.EOF {
-			log.Printf("error reading message from %s: %s", addr, readerr)
+			r.handleError(fmt.Errorf("error reading message from %s: %s", addr, readerr))
 			return
 		} else if readerr != io.EOF {
 			// remove newline, only if not EOF
@@ -86,10 +124,10 @@ func (srv *MetricReceiver) handleMessage(addr net.Addr, msg []byte) {
 		if len(line) > 1 {
 			metric, err := parseLine(line)
 			if err != nil {
-				log.Printf("error parsing line %q from %s: %s", line, addr, err)
+				r.handleError(fmt.Errorf("error parsing line %q from %s: %s", line, addr, err))
 				continue
 			}
-			go srv.Handler.HandleMetric(metric)
+			go r.Handler.HandleMetric(metric)
 		}
 
 		if readerr == io.EOF {
