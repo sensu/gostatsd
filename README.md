@@ -32,7 +32,8 @@ The format of each metric is:
 
     <bucket name>:<value>|<type>\n
 
-* `<bucket name>` is a string like `abc.def.g`, just like a graphite bucket name
+* `<bucket name>` is a string like `abc.def.g`, just like a graphite bucket name.
+Influx-style tags are supported, i.e., `abc.def.g,a=b,foo=bar`.
 * `<value>` is a string representation of a floating point number
 * `<type>` is one of `c`, `g`, or `ms` for "counter", "gauge", and "timer"
 respectively.
